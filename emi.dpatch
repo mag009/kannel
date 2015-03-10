@@ -1,0 +1,44 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_emi.dpatch by  <marc-andre.gatien@gameloft.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: add X50_AC
+
+@DPATCH@
+
+--- gw/smsc/smsc_emi.c  2014-07-14 19:43:18.231443407 +0000
++++ patches/gw/smsc/smsc_emi.c  2014-07-14 19:49:24.924009598 +0000
+@@ -88,6 +88,7 @@
+ #include "sms.h"
+ #include "emimsg.h"
+ #include "dlr.h"
++#include "meta_data.h"
+ #include "alt_charsets.h"
+ 
+ #define EMI2_MAX_TRN 100
+@@ -459,6 +460,11 @@
+     else if (msg->sms.rpi > 0)
+         emimsg->fields[E50_RPI] = octstr_create("1");
+ 
++    /* Use meta-data to set the E50_AC */
++    if (msg->sms.meta_data != NULL) {
++        emimsg->fields[E50_AC] =  meta_data_get_value(msg->sms.meta_data, "smpp", octstr_imm("E50_AC"));
++    }
++
+     str = octstr_duplicate(msg->sms.receiver);
+     if(octstr_get_char(str,0) == '+') {
+         /* international number format */
+@@ -778,6 +784,12 @@
+        msg->sms.msgdata = octstr_create("");
+    }
+ 
++        /*Insert the E50_HPLMN into meta_data*/
++        msg->sms.meta_data = octstr_duplicate(emimsg->fields[E50_HPLMN]);
++        if (msg->sms.meta_data != NULL) {
++            meta_data_set_value(msg->sms.meta_data, "smpp" , octstr_imm("E50_HPLMN"), octstr_duplicate(emimsg->fields[E50_HPLMN]),1);
++        }
++
+    msg->sms.sender = octstr_duplicate(emimsg->fields[E50_OADC]);
+    if (msg->sms.sender == NULL) {
+        warning(0, "EMI2[%s]: Empty sender field in received message",
+
